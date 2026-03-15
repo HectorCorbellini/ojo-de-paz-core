@@ -6,7 +6,7 @@
 
 ## Perfil Profesional
 
-Ingeniero de Seguridad con experiencia en protección de infraestructuras críticas (refinerías y puertos), actualmente especializado en desarrollo de software seguro y soluciones criptográficas aplicadas. Mi transición desde la seguridad física hacia la ciberseguridad me proporciona una perspectiva única para diseñar sistemas robustos que protegen tanto activos digitales como operaciones críticas.
+Perito de Informática con experiencia en protección de infraestructuras críticas (refinerías y puertos), actualmente especializado en desarrollo de software seguro y soluciones criptográficas aplicadas. Mi transición desde la seguridad física hacia la ciberseguridad me proporciona una perspectiva única para diseñar sistemas robustos que protegen tanto activos digitales como operaciones críticas.
 
 ---
 
