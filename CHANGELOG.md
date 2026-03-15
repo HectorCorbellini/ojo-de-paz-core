@@ -11,8 +11,10 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/spec/v2.0.0.h
 
 ### Added
 - 🚀 **Proyecto Ojo de Paz** - Sistema de verificación criptográfica para barcos pesqueros
-- 📋 **README.md** - Perfil profesional y documentación del proyecto
 - 🔐 **MaritimeIdentityValidator.java** - Componente core de validación de identidad marítima
+
+### Changed
+- 📝 **Documentation Refactor**: Migración de plantillas e identidad de marca al repositorio central de estándares para mejorar la mantenibilidad y el enfoque en el core.
 
 ### Security Features
 - **Atestación de Hardware**: Protocolo de desafío-respuesta para verificación de dispositivos criptográficos
