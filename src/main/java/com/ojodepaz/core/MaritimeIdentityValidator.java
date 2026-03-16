@@ -14,7 +14,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * MaritimeIdentityValidator - Componente de Atestación de Hardware para Ojo de Paz
+ * MaritimeIdentityValidator - Componente de Atestación de Hardware para Ojo de
+ * Paz
  *
  * Esta clase implementa protocolos de confianza cero para validar la identidad
  * de embarcaciones pesqueras mediante atestación de hardware criptográfico,
@@ -50,7 +51,7 @@ public class MaritimeIdentityValidator {
 
     // Almacén de claves públicas de dispositivos (deviceId -> publicKey)
     private final Map<String, PublicKey> devicePublicKeys = new HashMap<>();
-    
+
     // Nonces activos para challenge-response (nonce -> deviceId)
     private final Map<String, String> activeNonces = new HashMap<>();
     private static final long MAX_TIMESTAMP_DRIFT_SECONDS = 300; // 5 minutos de tolerancia
@@ -59,7 +60,7 @@ public class MaritimeIdentityValidator {
      * Registra un dispositivo con su clave pública para validación
      * En producción: esto viene de certificados de fábrica o PKI
      */
-    public void registerDevice(String deviceId, String publicKeyBase64) 
+    public void registerDevice(String deviceId, String publicKeyBase64)
             throws NoSuchAlgorithmException, InvalidKeySpecException {
         byte[] keyBytes = Base64.getDecoder().decode(publicKeyBase64);
         X509EncodedKeySpec spec = new X509EncodedKeySpec(keyBytes);
@@ -85,7 +86,8 @@ public class MaritimeIdentityValidator {
 
     /**
      * Punto de entrada principal para validación de identidad marítima
-     * Implementa protocolo de confianza cero: verifica cada componente independientemente
+     * Implementa protocolo de confianza cero: verifica cada componente
+     * independientemente
      *
      * @param vesselData Datos de la embarcación incluyendo firma y metadatos GPS
      * @return Resultado de validación con detalles de auditoría
@@ -97,8 +99,8 @@ public class MaritimeIdentityValidator {
         try {
             // Verificación de atestación de hardware con challenge-response
             boolean hardwareAttested = validateHardwareAttestation(
-                    vesselData.getDeviceId(), 
-                    vesselData.getNonce(), 
+                    vesselData.getDeviceId(),
+                    vesselData.getNonce(),
                     vesselData.getSignedNonce());
             if (!hardwareAttested) {
                 AUDIT_LOGGER.warning(String.format("Fallo en atestación de hardware para embarcación %s",
@@ -141,8 +143,8 @@ public class MaritimeIdentityValidator {
      * Valida atestación de hardware mediante protocolo challenge-response
      * PROPER IMPLEMENTATION: Server sends nonce, device signs it with private key
      * 
-     * @param deviceId Identificador del dispositivo
-     * @param nonce Challenge que envió el servidor
+     * @param deviceId    Identificador del dispositivo
+     * @param nonce       Challenge que envió el servidor
      * @param signedNonce Nonce firmado por el dispositivo con su clave privada
      * @return true si la firma es válida y corresponde al dispositivo
      */
@@ -203,7 +205,7 @@ public class MaritimeIdentityValidator {
             String expectedSignature = bytesToHex(payloadHash);
             byte[] expectedBytes = expectedSignature.getBytes();
             byte[] actualBytes = vesselData.getDigitalSignature().getBytes();
-            
+
             // Comparación segura contra timing attacks usando MessageDigest.isEqual
             return MessageDigest.isEqual(expectedBytes, actualBytes);
 
@@ -214,7 +216,8 @@ public class MaritimeIdentityValidator {
     }
 
     /**
-     * Valida integridad de metadatos GPS mediante verificación de timestamp y coordenadas
+     * Valida integridad de metadatos GPS mediante verificación de timestamp y
+     * coordenadas
      * Previene ataques de replay y manipulación de ubicación
      * Package-private para permitir tests unitarios
      */
@@ -255,17 +258,19 @@ public class MaritimeIdentityValidator {
         // Validación matemática - no depende de Locale (evita problemas con coma/punto)
         double latScaled = lat * 1_000_000;
         double lonScaled = lon * 1_000_000;
-        
+
         // Verifica que tengamos precisión de 6 decimales (microgrados ≈ 0.1m)
-        // Un valor con 6+ decimales tendrá parte fraccionaria cercana a 0 cuando escalado
+        // Un valor con 6+ decimales tendrá parte fraccionaria cercana a 0 cuando
+        // escalado
         return Math.abs(latScaled - Math.round(latScaled)) < 0.001 &&
-               Math.abs(lonScaled - Math.round(lonScaled)) < 0.001;
+                Math.abs(lonScaled - Math.round(lonScaled)) < 0.001;
     }
 
     /**
      * Utilidad para conversión de bytes a hexadecimal
+     * Package-private para permitir su uso en tests
      */
-    private String bytesToHex(byte[] bytes) {
+    String bytesToHex(byte[] bytes) {
         StringBuilder result = new StringBuilder();
         for (byte b : bytes) {
             result.append(String.format("%02x", b));
@@ -289,9 +294,17 @@ public class MaritimeIdentityValidator {
             this.event = event;
         }
 
-        public boolean isValid() { return valid; }
-        public String getMessage() { return message; }
-        public SecurityEvent getEvent() { return event; }
+        public boolean isValid() {
+            return valid;
+        }
+
+        public String getMessage() {
+            return message;
+        }
+
+        public SecurityEvent getEvent() {
+            return event;
+        }
     }
 
     /**
@@ -299,14 +312,14 @@ public class MaritimeIdentityValidator {
      */
     public static class VesselData {
         private final String vesselId;
-        private final String deviceId;           // Identificador del dispositivo criptográfico
-        private final String nonce;              // Challenge enviado por el servidor
-        private final byte[] signedNonce;        // Nonce firmado por el dispositivo
+        private final String deviceId; // Identificador del dispositivo criptográfico
+        private final String nonce; // Challenge enviado por el servidor
+        private final byte[] signedNonce; // Nonce firmado por el dispositivo
         private final GPSMetadata gpsMetadata;
         private final String digitalSignature;
 
         public VesselData(String vesselId, String deviceId, String nonce, byte[] signedNonce,
-                          GPSMetadata gpsMetadata, String digitalSignature) {
+                GPSMetadata gpsMetadata, String digitalSignature) {
             this.vesselId = vesselId;
             this.deviceId = deviceId;
             this.nonce = nonce;
@@ -315,12 +328,29 @@ public class MaritimeIdentityValidator {
             this.digitalSignature = digitalSignature;
         }
 
-        public String getVesselId() { return vesselId; }
-        public String getDeviceId() { return deviceId; }
-        public String getNonce() { return nonce; }
-        public byte[] getSignedNonce() { return signedNonce; }
-        public GPSMetadata getGpsMetadata() { return gpsMetadata; }
-        public String getDigitalSignature() { return digitalSignature; }
+        public String getVesselId() {
+            return vesselId;
+        }
+
+        public String getDeviceId() {
+            return deviceId;
+        }
+
+        public String getNonce() {
+            return nonce;
+        }
+
+        public byte[] getSignedNonce() {
+            return signedNonce;
+        }
+
+        public GPSMetadata getGpsMetadata() {
+            return gpsMetadata;
+        }
+
+        public String getDigitalSignature() {
+            return digitalSignature;
+        }
     }
 
     /**
@@ -337,9 +367,17 @@ public class MaritimeIdentityValidator {
             this.timestamp = timestamp;
         }
 
-        public double getLatitude() { return latitude; }
-        public double getLongitude() { return longitude; }
-        public long getTimestamp() { return timestamp; }
+        public double getLatitude() {
+            return latitude;
+        }
+
+        public double getLongitude() {
+            return longitude;
+        }
+
+        public long getTimestamp() {
+            return timestamp;
+        }
 
         @Override
         public String toString() {

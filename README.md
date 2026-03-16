@@ -91,13 +91,24 @@ ojo-de-paz-core/
 
 ## �🚀 Quick Start (Usage Example)
 
-Para integrar la validación en tu flujo de datos, utiliza el `MaritimeIdentityValidator`:
+Para integrar la validación en tu flujo de datos, utiliza el `MaritimeIdentityValidator` con el protocolo de atestación:
 
 ```java
 try {
     MaritimeIdentityValidator validator = new MaritimeIdentityValidator();
-    VesselData vesselData = new VesselData("ID-P-456", "OJO_DE_PAZ_V1", gpsMetadata, signature);
     
+    // 1. Registro del dispositivo (hecho una vez)
+    validator.registerDevice("DEVICE-456", publicKeyBase64);
+    
+    // 2. Generación de Challenge (por el servidor)
+    String nonce = validator.generateChallenge("DEVICE-456");
+    
+    // 3. Recepción de datos firmados por el hardware
+    VesselData vesselData = new VesselData(
+        "ID-P-456", "DEVICE-456", nonce, signedNonce, gpsMetadata, digitalSignature
+    );
+    
+    // 4. Validación Final
     ValidationResult result = validator.validateMaritimeIdentity(vesselData);
     
     if (result.isValid()) {
@@ -105,7 +116,7 @@ try {
     } else {
         System.out.println("🚨 Alerta de Seguridad: " + result.getMessage());
     }
-} catch (NoSuchAlgorithmException e) {
+} catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
     // Manejo de error de configuración criptográfica
 }
 ```
