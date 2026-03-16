@@ -23,7 +23,14 @@ A diferencia del AIS convencional —fácilmente clonable y costoso—, **Ojo de
 *   **Bajo Costo**: Implementable con hardware comercial y software de código abierto.
 *   **Rigor Operativo**: Diseñado desde la experiencia en seguridad de infraestructuras críticas, donde el error no es una opción.
 
-## 4. OBJETIVO DEL LLAMADO
+## 4. ESCALABILIDAD E INDUSTRIALIZACIÓN
+
+Para su internacionalización, el proyecto sigue lineamientos de calidad industrial:
+*   **Diseño Modular**: Separación clara entre el núcleo de validación técnica y las interfaces de visualización.
+*   **Estándares de Código**: Adherencia estricta a normas de seguridad y documentación profesional, garantizando su mantenimiento a largo plazo.
+*   **Prueba de Concepto (PoC)**: Validado mediante el **Proyecto Anfitrion** para su despliegue en mercados internacionales.
+
+## 5. OBJETIVO DEL LLAMADO
 
 Buscamos establecer un Plan Piloto en comunidades pesqueras del Caribe/Pacífico para validar la reducción de incidentes por identificación errónea y fortalecer la paz territorial mediante tecnología transparente.
 
@@ -44,7 +51,45 @@ graph TD
 
 ---
 
-## 🚀 Quick Start (Usage Example)
+## � Project Structure
+
+This project follows **Maven Standard Directory Layout** with proper package organization:
+
+```
+ojo-de-paz-core/
+├── pom.xml                          # Maven configuration (JUnit 5, Mockito)
+├── src/
+│   ├── main/java/com/ojodepaz/core/
+│   │   └── MaritimeIdentityValidator.java    # Core validation engine
+│   └── test/java/com/ojodepaz/core/
+│       └── MaritimeIdentityValidatorTest.java # Unit tests with mocks
+├── README.md
+├── CHANGELOG.md                     # Version history & security fixes
+└── SECURITY.md                      # Security policies & disclosure
+```
+
+### Package Organization
+
+**`com.ojodepaz.core`** - Core validation logic containing:
+
+| Component | Purpose |
+|-----------|---------|
+| `MaritimeIdentityValidator` | Main validation engine with challenge-response attestation |
+| `VesselData` | Immutable data class for vessel identification |
+| `GPSMetadata` | GPS coordinates with timestamp integrity |
+| `ValidationResult` | Immutable validation outcome with audit events |
+| `SecurityEvent` | Enumeration of security audit events |
+
+### Design Principles
+
+- **Dependency Injection**: `Clock` and `MessageDigest` injected for testability
+- **Package-Private Methods**: `validateGPSIntegrity()` accessible for unit testing
+- **Immutable Objects**: All data classes are immutable for thread safety
+- **Zero Trust Architecture**: Never trust, always verify
+
+---
+
+## �🚀 Quick Start (Usage Example)
 
 Para integrar la validación en tu flujo de datos, utiliza el `MaritimeIdentityValidator`:
 

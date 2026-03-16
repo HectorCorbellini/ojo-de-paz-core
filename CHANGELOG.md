@@ -7,6 +7,38 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/spec/v2.0.0.h
 
 ---
 
+## [0.1.1] - 2026-03-15
+
+### 🔒 Security Fix - CRITICAL
+**Fixed**: Vulnerabilidad crítica en atestación de hardware
+
+**Problem**: `validateHardwareAttestation()` comparaba hash del challenge con hash del token, lo que requería que todos los dispositivos compartieran el mismo secreto hardcoded (`"OJO_DE_PAZ_V1"`).
+
+**Solution**: Implementado protocolo challenge-response con criptografía asimétrica:
+- **Before**: `hash("OJO_DE_PAZ_V1") == hash(hardwareToken)` → shared secret
+- **After**: Server envía nonce → Device firma con clave privada → Server verifica con clave pública del dispositivo
+
+**Changes**:
+- Nueva arquitectura: `registerDevice()`, `generateChallenge()`, `validateHardwareAttestation(deviceId, nonce, signedNonce)`
+- Uso de ECDSA (`SHA256withECDSA`) para verificación de firmas
+- Nonces de un solo uso (previene replay attacks)
+- Almacén de claves públicas por dispositivo (`Map<String, PublicKey>`)
+- Updated `VesselData` con `deviceId`, `nonce`, `signedNonce`
+
+**Impact**: Cada dispositivo ahora tiene su propia identidad criptográfica única. Comprometer un dispositivo no compromete los demás.
+
+### 🐛 Bug Fix
+**Fixed**: Lógica invertida en `hasRequiredPrecision()`
+
+**Problem**: El método retornaba `true` cuando `abs(latScaled - round(latScaled)) > 0.001`, lo que significa que coordenadas con exactamente 6 decimales (que son "redondas" en el 7mo decimal) fallaban la validación.
+
+**Solution**: Condición corregida de `>` a `<`. Ahora retorna `true` cuando la diferencia es cercana a cero, indicando precisión de 6+ decimales.
+
+**Before**: `Math.abs(latScaled - Math.round(latScaled)) > 0.001` ❌
+**After**: `Math.abs(latScaled - Math.round(latScaled)) < 0.001` ✅
+
+---
+
 ## [0.1.0] - 2026-03-12
 
 ### Added
@@ -54,7 +86,11 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/spec/v2.0.0.h
 - 📊 **Mock Objects** - Tests con inyección de dependencias
 - 🔍 **Edge Cases** - Validación de casos límite y errores
 
-### [0.3.0] - Integración Criptográfica
+### [0.3.0] - Arquitectura y Refactorización
+- 📁 **Package Structure** - Separar clases internas en archivos independientes:
+  - `model.VesselData`, `model.GPSMetadata`, `model.ValidationResult`
+  - `security.HardwareAttestor`, `security.SignatureVerifier`
+  - `audit.SecurityLogger`
 - 🔑 **BouncyCastle** - Integración con biblioteca criptográfica profesional
 - 📜 **PKI Integration** - Certificados digitales para hardware
 - 🔐 **ECDSA** - Firma digital con curvas elípticas

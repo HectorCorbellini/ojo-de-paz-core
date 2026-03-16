@@ -1,8 +1,15 @@
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
+package com.ojodepaz.core;
+
+import java.security.*;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.X509EncodedKeySpec;
+import java.util.Base64;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -41,10 +48,40 @@ public class MaritimeIdentityValidator {
         this.messageDigest = digest;
     }
 
-    // Constantes de seguridad para validación de integridad
-    private static final int GPS_COORDINATE_PRECISION = 6;
+    // Almacén de claves públicas de dispositivos (deviceId -> publicKey)
+    private final Map<String, PublicKey> devicePublicKeys = new HashMap<>();
+    
+    // Nonces activos para challenge-response (nonce -> deviceId)
+    private final Map<String, String> activeNonces = new HashMap<>();
     private static final long MAX_TIMESTAMP_DRIFT_SECONDS = 300; // 5 minutos de tolerancia
-    private static final String HARDWARE_ATTESTATION_CHALLENGE = "OJO_DE_PAZ_V1";
+
+    /**
+     * Registra un dispositivo con su clave pública para validación
+     * En producción: esto viene de certificados de fábrica o PKI
+     */
+    public void registerDevice(String deviceId, String publicKeyBase64) 
+            throws NoSuchAlgorithmException, InvalidKeySpecException {
+        byte[] keyBytes = Base64.getDecoder().decode(publicKeyBase64);
+        X509EncodedKeySpec spec = new X509EncodedKeySpec(keyBytes);
+        KeyFactory keyFactory = KeyFactory.getInstance("EC");
+        PublicKey publicKey = keyFactory.generatePublic(spec);
+        devicePublicKeys.put(deviceId, publicKey);
+        AUDIT_LOGGER.info("Dispositivo registrado: " + deviceId);
+    }
+
+    /**
+     * Genera un nonce para challenge-response
+     * El servidor envía esto al dispositivo, quien debe firmarlo
+     */
+    public String generateChallenge(String deviceId) {
+        if (!devicePublicKeys.containsKey(deviceId)) {
+            throw new IllegalArgumentException("Dispositivo no registrado: " + deviceId);
+        }
+        String nonce = UUID.randomUUID().toString();
+        activeNonces.put(nonce, deviceId);
+        AUDIT_LOGGER.info("Challenge generado para dispositivo: " + deviceId);
+        return nonce;
+    }
 
     /**
      * Punto de entrada principal para validación de identidad marítima
@@ -58,8 +95,11 @@ public class MaritimeIdentityValidator {
                 vesselData.getVesselId()));
 
         try {
-            // Verificación de atestación de hardware
-            boolean hardwareAttested = validateHardwareAttestation(vesselData.getHardwareToken());
+            // Verificación de atestación de hardware con challenge-response
+            boolean hardwareAttested = validateHardwareAttestation(
+                    vesselData.getDeviceId(), 
+                    vesselData.getNonce(), 
+                    vesselData.getSignedNonce());
             if (!hardwareAttested) {
                 AUDIT_LOGGER.warning(String.format("Fallo en atestación de hardware para embarcación %s",
                         vesselData.getVesselId()));
@@ -98,24 +138,53 @@ public class MaritimeIdentityValidator {
     }
 
     /**
-     * Valida atestación de hardware mediante protocolo de desafío-respuesta
-     * Asegura que el dispositivo criptográfico es genuino y no ha sido comprometido
+     * Valida atestación de hardware mediante protocolo challenge-response
+     * PROPER IMPLEMENTATION: Server sends nonce, device signs it with private key
+     * 
+     * @param deviceId Identificador del dispositivo
+     * @param nonce Challenge que envió el servidor
+     * @param signedNonce Nonce firmado por el dispositivo con su clave privada
+     * @return true si la firma es válida y corresponde al dispositivo
      */
-    private boolean validateHardwareAttestation(String hardwareToken) {
-        if (hardwareToken == null || hardwareToken.isEmpty()) {
+    private boolean validateHardwareAttestation(String deviceId, String nonce, byte[] signedNonce) {
+        if (deviceId == null || nonce == null || signedNonce == null || signedNonce.length == 0) {
             return false;
         }
 
         try {
-            // Simulación de protocolo de atestación TPM/TEE
-            byte[] challengeHash = messageDigest.digest(HARDWARE_ATTESTATION_CHALLENGE.getBytes());
-            byte[] tokenHash = messageDigest.digest(hardwareToken.getBytes());
+            // Verificar que el nonce existe y corresponde al dispositivo
+            String expectedDevice = activeNonces.get(nonce);
+            if (expectedDevice == null || !expectedDevice.equals(deviceId)) {
+                AUDIT_LOGGER.warning("Nonce inválido o expirado para dispositivo: " + deviceId);
+                return false;
+            }
 
-            // Verificación segura contra timing attacks usando MessageDigest.isEqual
-            return MessageDigest.isEqual(challengeHash, tokenHash);
+            // Obtener clave pública del dispositivo
+            PublicKey publicKey = devicePublicKeys.get(deviceId);
+            if (publicKey == null) {
+                AUDIT_LOGGER.warning("Dispositivo no registrado: " + deviceId);
+                return false;
+            }
+
+            // Verificar firma ECDSA
+            Signature signature = Signature.getInstance("SHA256withECDSA");
+            signature.initVerify(publicKey);
+            signature.update(nonce.getBytes());
+            boolean valid = signature.verify(signedNonce);
+
+            // Invalidar nonce después de uso (previene replay)
+            activeNonces.remove(nonce);
+
+            if (!valid) {
+                AUDIT_LOGGER.warning("Firma de atestación inválida para dispositivo: " + deviceId);
+                return false;
+            }
+
+            AUDIT_LOGGER.info("Atestación de hardware exitosa para: " + deviceId);
+            return true;
 
         } catch (Exception e) {
-            AUDIT_LOGGER.log(Level.SEVERE, "Error en algoritmo de hash para atestación", e);
+            AUDIT_LOGGER.log(Level.SEVERE, "Error en atestación de hardware para: " + deviceId, e);
             return false;
         }
     }
@@ -147,8 +216,9 @@ public class MaritimeIdentityValidator {
     /**
      * Valida integridad de metadatos GPS mediante verificación de timestamp y coordenadas
      * Previene ataques de replay y manipulación de ubicación
+     * Package-private para permitir tests unitarios
      */
-    private boolean validateGPSIntegrity(GPSMetadata gpsData) {
+    boolean validateGPSIntegrity(GPSMetadata gpsData) {
         // Verificación de timestamp para prevenir ataques de replay
         Instant now = systemClock.instant();
         Instant gpsTime = Instant.ofEpochSecond(gpsData.getTimestamp());
@@ -187,8 +257,9 @@ public class MaritimeIdentityValidator {
         double lonScaled = lon * 1_000_000;
         
         // Verifica que tengamos precisión de 6 decimales (microgrados ≈ 0.1m)
-        return Math.abs(latScaled - Math.round(latScaled)) > 0.001 &&
-               Math.abs(lonScaled - Math.round(lonScaled)) > 0.001;
+        // Un valor con 6+ decimales tendrá parte fraccionaria cercana a 0 cuando escalado
+        return Math.abs(latScaled - Math.round(latScaled)) < 0.001 &&
+               Math.abs(lonScaled - Math.round(lonScaled)) < 0.001;
     }
 
     /**
@@ -224,23 +295,30 @@ public class MaritimeIdentityValidator {
     }
 
     /**
-     * Datos de la embarcación para validación
+     * Datos de la embarcación para validación con challenge-response
      */
     public static class VesselData {
         private final String vesselId;
-        private final String hardwareToken;
+        private final String deviceId;           // Identificador del dispositivo criptográfico
+        private final String nonce;              // Challenge enviado por el servidor
+        private final byte[] signedNonce;        // Nonce firmado por el dispositivo
         private final GPSMetadata gpsMetadata;
         private final String digitalSignature;
 
-        public VesselData(String vesselId, String hardwareToken, GPSMetadata gpsMetadata, String digitalSignature) {
+        public VesselData(String vesselId, String deviceId, String nonce, byte[] signedNonce,
+                          GPSMetadata gpsMetadata, String digitalSignature) {
             this.vesselId = vesselId;
-            this.hardwareToken = hardwareToken;
+            this.deviceId = deviceId;
+            this.nonce = nonce;
+            this.signedNonce = signedNonce;
             this.gpsMetadata = gpsMetadata;
             this.digitalSignature = digitalSignature;
         }
 
         public String getVesselId() { return vesselId; }
-        public String getHardwareToken() { return hardwareToken; }
+        public String getDeviceId() { return deviceId; }
+        public String getNonce() { return nonce; }
+        public byte[] getSignedNonce() { return signedNonce; }
         public GPSMetadata getGpsMetadata() { return gpsMetadata; }
         public String getDigitalSignature() { return digitalSignature; }
     }
