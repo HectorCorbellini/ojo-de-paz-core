@@ -1,3 +1,13 @@
+> **🇬🇧 English Summary** | [Spanish full documentation below](#ojo-de-paz-arquitectura-de-identidad-digital-para-la-seguridad-marítima-civil)
+>
+> **OjoDePaz** is a Zero Trust identity validation protocol for artisanal fishing vessels operating in maritime exclusion zones.
+> It provides vessels with a tamper-proof digital identity using low-cost cryptographic hardware, GPS attestation, and a Java-based real-time integrity engine —
+> enabling coast guards and NGOs to distinguish legitimate civilians from threats without relying on expensive military-grade AIS systems.
+>
+> **Stack**: Java 17 · Maven · JUnit 5 · Mockito · Cryptographic challenge-response · GPS signed payloads
+
+---
+
 # Ojo de Paz: Arquitectura de Identidad Digital para la Seguridad Marítima Civil
 
 > **Cerrando la brecha entre la seguridad operativa y la verificación digital para la protección de la vida humana.**
