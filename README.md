@@ -151,4 +151,4 @@ mvn test
 
 Este proyecto sigue los [Estándares de Repositorio Héctor Enrique](https://github.com/HectorCorbellini/hector-repo-standard).
 ---
-> **Powered by [Hector's Repo Standards](https://github.com/HectorCorbellini/hector-repo-standard)**
+*This project follows the [Hector Corbellini Engineering Standards](https://github.com/HectorCorbellini/hector-repo-standard).*
