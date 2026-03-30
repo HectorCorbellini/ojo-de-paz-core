@@ -150,3 +150,5 @@ mvn test
 **Héctor Enrique** - Perito de Informática con experiencia en protección de infraestructuras críticas (refinerías y puertos), actualmente especializado en desarrollo de software seguro y soluciones criptográficas aplicadas. Su transición desde la seguridad física hacia la ciberseguridad le proporciona una perspectiva única para diseñar sistemas robustos que protegen tanto activos digitales como operaciones críticas.
 
 Este proyecto sigue los [Estándares de Repositorio Héctor Enrique](https://github.com/HectorCorbellini/hector-repo-standard).
+---
+> **Powered by [Hector's Repo Standards](https://github.com/HectorCorbellini/hector-repo-standard)**
