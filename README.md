@@ -1,3 +1,5 @@
+![Java CI with Maven](https://github.com/HectorCorbellini/ojo-de-paz-core/actions/workflows/maven.yml/badge.svg)
+
 > **🇬🇧 English Summary** | [Spanish full documentation below](#ojo-de-paz-arquitectura-de-identidad-digital-para-la-seguridad-marítima-civil)
 >
 > **OjoDePaz** is a Zero Trust identity validation protocol for artisanal fishing vessels operating in maritime exclusion zones.
