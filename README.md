@@ -8,6 +8,30 @@
 
 ---
 
+### 🛡️ Proof of Concept: Identity Attestation
+**Input (Signed Cryptographic Challenge):**
+```text
+Vessel: ID-P-456
+Challenge: xyz123
+SignedNonce: 0x4f...a3
+GPS: -34.89, -56.16
+```
+
+**Output (Validated Identity Engine):**
+```json
+{
+  "status": "SAFE",
+  "vessel_id": "ID-P-456",
+  "identity_verified": true,
+  "location_attested": true,
+  "last_audit": "2026-04-19T21:45:00Z"
+}
+```
+
+---
+
+---
+
 # Ojo de Paz: Arquitectura de Identidad Digital para la Seguridad Marítima Civil
 
 > **Cerrando la brecha entre la seguridad operativa y la verificación digital para la protección de la vida humana.**
@@ -145,8 +169,14 @@ mvn test
 
 ---
 
-### 📧 Sobre el Autor
+## 📧 Contact & Collaboration
 
-**Héctor Enrique** - Perito de Informática con experiencia en protección de infraestructuras críticas (refinerías y puertos), actualmente especializado en desarrollo de software seguro y soluciones criptográficas aplicadas. Su transición desde la seguridad física hacia la ciberseguridad le proporciona una perspectiva única para diseñar sistemas robustos que protegen tanto activos digitales como operaciones críticas.
+**Interested in high-stakes maritime security?**  
+Developed by **Héctor Enrique** — Specialist in critical infrastructure protection (refineries and ports).
 
+Based in **Uruguay (Timezone EST/EDT)**, I provide strategic and technical collaboration for institutional partners and NGOs in North America, ensuring professional rigor and real-time alignment.
+
+[Contact me via LinkedIn](https://www.linkedin.com/in/hector-corbellini/) | [Explore more projects](../../README.md)
+
+---
 *This project follows the [Hector Corbellini Engineering Standards](https://github.com/HectorCorbellini/hector-repo-standard).*
